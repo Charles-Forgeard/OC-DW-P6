@@ -24,7 +24,7 @@ exports.getImage = (req, res, next) => {
             }
         })
         .catch(err => res.status(400).json({err}))
-    }else{
+    }else if(config.storeIMG === 'server'){
         const filePath = path.join(__dirname, '../images', req.params.fileName);
         const file = fs.createReadStream(filePath);
         file.on('open', () => {
@@ -37,6 +37,9 @@ exports.getImage = (req, res, next) => {
             res.set('Content-Type', 'text/plain');
             res.status(404).end('Not found');
         })
+    }else{
+        console.log('valeur storeIMG invalide. Valeurs acceptée = mongoDB || server')
+            res.status(500)
     }
     
 }

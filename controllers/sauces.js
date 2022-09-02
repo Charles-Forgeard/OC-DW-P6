@@ -1,29 +1,38 @@
 const Sauces = require('../models/Sauces');
-const Sauce = require('../models/Sauces');
+const Images = require('../models/Images');
 const fs = require('fs');
+const config = require('../config');
 const { findSourceMap } = require('module');
 const { ifError } = require('assert');
 
 function deleteAllFilesNamed(fileNameToDeleteWithoutExtension, folderRelativePath){
-    fs.readdir(__dirname + folderRelativePath, (err, files) => {
-        if(err){
-            console.log(err);
-        }else{
-            files.forEach(fileName => {
-                    if(fileName.split('.').slice(0,-1).join('') === fileNameToDeleteWithoutExtension){
-                        fs.unlink(`images/${fileName}`, (err) => {
-                            if(err) console.log(err);
-                        })
+    if(config.storeIMG === 'server'){
+        fs.readdir(__dirname + folderRelativePath, (err, files) => {
+            if(err){
+                console.log(err);
+            }else{
+                files.forEach(fileName => {
+                        if(fileName.split('.').slice(0,-1).join('') === fileNameToDeleteWithoutExtension){
+                            fs.unlink(`images/${fileName}`, (err) => {
+                                if(err) console.log(err);
+                            })
+                        }
                     }
-                }
-            )
-        }
+                )
+            }
 
-    })
+        })
+    }else if(config.storeIMG === 'mongoDB'){
+        const regex = new RegExp(`^${fileNameToDeleteWithoutExtension}`)
+        Images.deleteMany({ name: regex}).then(result => console.log(result.deletedCount));
+    }else{
+        console.log('valeur storeIMG invalide. Valeurs acceptée = mongoDB || server')
+        res.status(500)
+    }
 }
 
 exports.getAllSauces = (req, res, next) => {
-    Sauce.find()
+    Sauces.find()
         .then(sauces => {
             res.status(200).json(sauces)
         })
@@ -31,7 +40,7 @@ exports.getAllSauces = (req, res, next) => {
 }
 
 exports.getOneSauce = (req, res, next) => {
-    Sauce.findOne({_id: req.params.id})
+    Sauces.findOne({_id: req.params.id})
         .then(sauce => {
             if(sauce === null){
                 res.status(404).json({message: "La sauce demandée n'est pas présente en db"})
@@ -46,7 +55,7 @@ exports.addSauces = (req, res, next) => {
     const bodySauce = JSON.parse(req.body.sauce)
     delete bodySauce._id;
     delete bodySauce._userId;
-    const sauce = new Sauce({
+    const sauce = new Sauces({
         ...bodySauce,
         userId: req.auth.userId,
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
@@ -72,12 +81,12 @@ exports.updateSauce = (req, res, next) => {
         ...req.body
     }
     bodySauce.userId = req.auth.userId;
-    Sauce.findOne({_id: req.params.id})
+    Sauces.findOne({_id: req.params.id})
         .then((sauce) => {
             if(sauce.userId != bodySauce.userId){
                 res.status(401).json({message: "Modification non autorisée"})
             }else{
-                Sauce.findOneAndUpdate({_id: req.params.id}, bodySauce)
+                Sauces.findOneAndUpdate({_id: req.params.id}, bodySauce)
                 .then(lastSauce => {
                     const imgFileName = lastSauce.imageUrl.replace(`${req.protocol}://${req.get('host')}/images/`, '').split('.').slice(0,-1).join('');
                     deleteAllFilesNamed(imgFileName, '/../images/');
@@ -101,7 +110,7 @@ exports.deleteSauce = (req, res, next) => {
 
                 deleteAllFilesNamed(imgFileName, '/../images/');
 
-                Sauce.deleteOne({_id: req.params.id})
+                Sauces.deleteOne({_id: req.params.id})
                         .then(() => {res.status(200).json({message: "Suppression réussie"})})
                         .catch(err => res.status(500).json({err}))
             }
@@ -125,7 +134,7 @@ exports.likeOneSauce = (req, res, next) => {
                             sauce.usersDisliked.splice(sauce.usersLiked.indexOf(userId), 1);
                         }
                         sauce.usersLiked.push(userId);
-                        Sauce.updateOne({_id: req.params.id}, sauce)
+                        Sauces.updateOne({_id: req.params.id}, sauce)
                             .then(()=> res.status(200).json({message: "Ajout du like réussi"}))
                             .catch(err => res.status(401).json({err}))
                     }
@@ -138,13 +147,13 @@ exports.likeOneSauce = (req, res, next) => {
                         sauce.dislikes += 1;
                         sauce.usersLiked.splice(sauce.usersLiked.indexOf(userId), 1);
                         sauce.usersDisliked.push(userId);
-                        Sauce.updateOne({_id: req.params.id}, sauce)
+                        Sauces.updateOne({_id: req.params.id}, sauce)
                             .then(()=> res.status(200).json({message: "Suppression du like et ajout du dislike réussis"}))
                             .catch(err => res.status(401).json({err}))
                     }else{
                         sauce.dislikes += 1;
                         sauce.usersDisliked.push(userId);
-                        Sauce.updateOne({_id: req.params.id}, sauce)
+                        Sauces.updateOne({_id: req.params.id}, sauce)
                             .then(()=> res.status(200).json({message: "Ajout du dislike réussie"}))
                             .catch(err => res.status(401).json({err}))
                     }
@@ -153,13 +162,13 @@ exports.likeOneSauce = (req, res, next) => {
                     if(userHasAllreadyDisliked){
                         sauce.dislikes -= 1;
                         sauce.usersDisliked.splice(sauce.usersLiked.indexOf(userId), 1);
-                        Sauce.updateOne({_id: req.params.id}, sauce)
+                        Sauces.updateOne({_id: req.params.id}, sauce)
                             .then(()=> res.status(200).json({message: "Suppression du dislike réussie"}))
                             .catch(err => res.status(401).json({err}))
                     }else if(userHasAllreadyLiked){
                         sauce.likes -= 1;
                         sauce.usersLiked.splice(sauce.usersLiked.indexOf(userId), 1);
-                        Sauce.updateOne({_id: req.params.id}, sauce)
+                        Sauces.updateOne({_id: req.params.id}, sauce)
                             .then(()=> res.status(200).json({message: "Suppression du like réussie"}))
                             .catch(err => res.status(401).json({err}))
                     }else{

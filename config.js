@@ -19,4 +19,7 @@ exports.crypt = {
 
 exports.abstractAPIKey = process.env.ABSTRACTAPI_KEY;
 
-exports.storeIMG = process.env.STORE_IMG;
+//Storage image
+//Set value to server (to strore in image folder) or mongoDB (to store on mongoDB ATLAS)
+
+exports.storeIMG = 'mongoDB';
