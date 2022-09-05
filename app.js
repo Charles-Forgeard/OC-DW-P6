@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth');
 const rateLimit = require('./middleware/rate-limit');
 const saucesRoutes = require('./routes/sauces');
 const imagesRoutes = require('./routes/images');
+const auth = require('./middleware/auth');
 const path = require('path');
 const mongoose = require('mongoose');
 
@@ -35,11 +36,12 @@ app.use((req, res, next) => {
 app.use(express.json())
 
 app.use('/api/auth', authRoutes)
-app.use('/api/sauces', saucesRoutes)
 
-/* Si l'accès aux images n'est pas sécurisé il est possible de donner l'accès au fichier images en 
+/* Si l'accès aux images n'est pas sécurisé et qu'elle ne sont pas stockées en BD, il est possible de donner l'accès au fichier images en 
 supprimant "imagesRoutes" et en décommentant "express.static(path.join(__dirname, 'images'))".
 Tout le contenu du répertoire "images" sera alors librement accessible*/
 app.use('/images', imagesRoutes /*express.static(path.join(__dirname, 'images'))*/)
+
+app.use('/api/sauces', saucesRoutes)
 
 module.exports = app;

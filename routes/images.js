@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const config = require('../config');
 
 const imagesCtrl = require('../controllers/images');
 
-// décommenter "auth" middleware pour sécuriser l'accès aux images (nécessite modification du front avec ajout de token d'identification dans la requête)
-router.get('/:fileName', /*auth,*/ imagesCtrl.getImage);
+router.get('/:fileName', config.authAccessImg === true ? auth : function (req, res, next){next()}, imagesCtrl.getImage);
 
 module.exports = router;

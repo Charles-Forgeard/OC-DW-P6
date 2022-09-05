@@ -23,3 +23,7 @@ exports.abstractAPIKey = process.env.ABSTRACTAPI_KEY;
 //Set value to server (to strore in image folder) or mongoDB (to store on mongoDB ATLAS)
 
 exports.storeIMG = 'mongoDB';
+
+//Authentification pour l'accès aux images des sauces
+
+exports.authAccessImg = false;

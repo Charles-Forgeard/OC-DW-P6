@@ -24,7 +24,11 @@ function deleteAllFilesNamed(fileNameToDeleteWithoutExtension, folderRelativePat
         })
     }else if(config.storeIMG === 'mongoDB'){
         const regex = new RegExp(`^${fileNameToDeleteWithoutExtension}`)
-        Images.deleteMany({ name: regex}).then(result => console.log(result.deletedCount));
+        Images.deleteMany({ name: regex}).then(result => {
+            if(result === 0){
+                console.log('aucune image supprimée')
+            }
+        });
     }else{
         console.log('valeur storeIMG invalide. Valeurs acceptée = mongoDB || server')
         res.status(500)
@@ -74,7 +78,8 @@ exports.addSauces = (req, res, next) => {
 }
 
 exports.updateSauce = (req, res, next) => {
-    const bodySauce = req.file ? {
+    const hasImage = req.file ? true : false;
+    const bodySauce = hasImage ? {
         ...JSON.parse(req.body.sauce),
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
     } : {
@@ -84,19 +89,31 @@ exports.updateSauce = (req, res, next) => {
     Sauces.findOne({_id: req.params.id})
         .then((sauce) => {
             if(sauce.userId != bodySauce.userId){
+                console.log("sauce n'appartient pas à l'utilisateur")
                 res.status(401).json({message: "Modification non autorisée"})
             }else{
-                Sauces.findOneAndUpdate({_id: req.params.id}, bodySauce)
+                Sauces.findOneAndUpdate({_id: sauce._id}, bodySauce)
                 .then(lastSauce => {
-                    const imgFileName = lastSauce.imageUrl.replace(`${req.protocol}://${req.get('host')}/images/`, '').split('.').slice(0,-1).join('');
-                    deleteAllFilesNamed(imgFileName, '/../images/');
+                    if(hasImage){
+                        console.log('4' + res.headersSent)
+                        const imgFileName = lastSauce.imageUrl.replace(`${req.protocol}://${req.get('host')}/images/`, '').split('.').slice(0,-1).join('');
+                        deleteAllFilesNamed(imgFileName, '/../images/');
+                    }
                 })
-                .then(()=> res.status(200).json({message: "Modification réussie"}))
-                .catch(err => res.status(401).json(err))
+                .then(()=> {
+                    res.status(200).json({message: "Modification réussie"})
+                })
+                .catch((err) => {
+                    console.log(err)
+                    res.status(401).json(err)
+                })
             }
         })
         .catch(
-            err => res.status(400).json({err})
+            (err) => {
+                console.log(err)
+                res.status(400).json({message: err})
+            }
         )
 }
 

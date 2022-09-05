@@ -77,9 +77,13 @@ const resizeAndStoreImg = function (data, fileName, extension, destination, more
 }
 
 module.exports = async (req, res, next) => {
-    const extension = MIME_TYPES_to_ext[req.file.mimetype];
-    const fileName = Date.now() + req.file.originalname.replace(/ /g, '_').split('.').slice(0, -1).join('');
-    req.file.filename = fileName + '.' + extension;
-    resizeAndStoreImg(req.file.buffer, fileName, extension, config.storeIMG, ['jpg', 'webp', 'avif'])
-    next()
+    if(req.file){
+        const extension = MIME_TYPES_to_ext[req.file.mimetype];
+        const fileName = Date.now() + req.file.originalname.replace(/ /g, '_').split('.').slice(0, -1).join('');
+        req.file.filename = fileName + '.' + extension;
+        resizeAndStoreImg(req.file.buffer, fileName, extension, config.storeIMG, ['jpg', 'webp', 'avif'])
+        next()
+    }else{
+        next()
+    }
 }
