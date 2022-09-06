@@ -17,7 +17,10 @@ exports.crypt = {
     emailInBD: process.env.CRYPT_EMAIL
 }
 
+//Filtres emails utilisateurs en base de donnée
+
 exports.abstractAPIKey = process.env.ABSTRACTAPI_KEY;
+exports.forbidenEmailDomains = ["vpsrec"]
 
 //Storage image
 //Set value to server (to strore in image folder) or mongoDB (to store on mongoDB ATLAS)
