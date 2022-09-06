@@ -6,7 +6,7 @@ module.exports = (req, res, next) => {
     if(key !== 'undefined'){
         fetch(`https://emailvalidation.abstractapi.com/v1/?api_key=${key}&email=${req.body.email}`).then(res => res.json()).then(
             emailValidationReport => {
-                if(config.forbidenEmailDomains.indexOf(emailValidationReport.email.split('.').slice(0, -1).join('').split('@').pop()) != -1){
+                if(config.forbidenEmailDomains.indexOf(emailValidationReport.email.split('.').slice(0, -1).join('.').split('@').pop()) != -1){
                     emailValidationReport.is_in_orbidenEmailDomain_list = true;
                 }else{
                     emailValidationReport.is_in_orbidenEmailDomain_list = false;

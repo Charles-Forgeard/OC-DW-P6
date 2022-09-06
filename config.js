@@ -19,8 +19,10 @@ exports.crypt = {
 
 //Filtres emails utilisateurs en base de donnée
 
+//Clé de l'API abstract => https://www.abstractapi.com/
 exports.abstractAPIKey = process.env.ABSTRACTAPI_KEY;
-exports.forbidenEmailDomains = ["vpsrec"]
+//Liste de domaines d'email temporaires à interdire lors de l'enregistrement utilisateur.
+exports.forbidenEmailDomains = ["vpsrec","boxomail","cool.fr","jetable.fr","courriel.fr","moncourrier.fr","monemail.fr","@monmail.fr","hide.biz","mymail.infos","trashmail"];
 
 //Storage image
 //Set value to server (to strore in image folder) or mongoDB (to store on mongoDB ATLAS)
