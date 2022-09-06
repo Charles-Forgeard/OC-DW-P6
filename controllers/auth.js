@@ -3,8 +3,9 @@ const Users = require('../models/Users');
 const argon2 = require('argon2');
 const jwt = require('jsonwebtoken');
 const generator = require('generate-password');
-const config = require('../config')
-const lockedTimeout = 1 * 60 * 1000;
+const config = require('../config');
+const longinsFailedLimitation = config.longinsFailedLimitation ? config.longinsFailedLimitation : 0;
+const userLockedTimeout = config.userLockedTimeout ? config.userLockedTimeout :  24 * 60 * 60 * 1000;
 
 exports.mdpToken = generator.generate({
     length: 60,
@@ -42,7 +43,6 @@ exports.postSignup = (req, res, next) => {
 }
 
 exports.postLogin = (req, res, next) => {
-
     req.body.cryptEmail = jwt.sign(
         `${req.body.email}`,
         config.crypt.emailInBD
@@ -54,11 +54,11 @@ exports.postLogin = (req, res, next) => {
                 console.log("utilisateur n'existe pas en BD")
                 res.status(401).json({message: 'Identifiant et/ou mot de passe incorrecte'})
                 break;
-            case user.locked > Date.now() - lockedTimeout:
+            case user.locked > Date.now() - userLockedTimeout:
                 console.log("Compte bloqué")
                 res.status(401).json({message: 'proposition réinitialisation mdp par email'})
                 break;
-            case user.locked > 3 && auth.locked < Date.now() - lockedTimeout:
+            case user.locked > longinsFailedLimitation && auth.locked < Date.now() - userLockedTimeout:
                 console.log("Compte débloqué")
                 user.lock = 0;
             default:
@@ -66,20 +66,18 @@ exports.postLogin = (req, res, next) => {
                 argon2.verify(user.password, req.body.password)
                 .then(valid => {
                     if(!valid){
-                        user.locked = user.locked === 2 ? Date.now() : ++user.locked;
-                        switch(user.locked){
-                            case 1:
-                                console.log("1 erreur")
-                                break;
-                            case 2:
-                                console.log("2 erreurs")
-                                break;
-                            default:
-                                console.log("3 erreurs")
-                                console.log("bloquage du compte")
+                        if(longinsFailedLimitation !== 0){
+                            user.locked = user.locked === longinsFailedLimitation - 1 ? Date.now() : ++user.locked;
+                            user.save();
+                            if(user.locked >= longinsFailedLimitation){
+                                console.log(`Au moins ${longinsFailedLimitation} erreurs d'authentification`)
+                                console.log("Compte utilisateur bloqué")
+                            }else{
+                                console.log(`${user.locked} erreur(s) d'authentification`)
+                            }
                         }
-                        user.save();
-                        res.status(401).json({message: 'Identifiant et/ou mot de passe incorrecte'});
+                        console.log("mot de passe incorrect")
+                        res.status(401).json({message: 'Identifiant et/ou mot de passe incorrect'});
                     }else{
                         console.log("autentification réussie");
                         if(user.locked > 0){

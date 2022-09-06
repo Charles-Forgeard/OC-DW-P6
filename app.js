@@ -6,7 +6,7 @@ const authRoutes = require('./routes/auth');
 const rateLimit = require('./middleware/rate-limit');
 const saucesRoutes = require('./routes/sauces');
 const imagesRoutes = require('./routes/images');
-const auth = require('./middleware/auth');
+const siteDomain = config.siteDomain;
 const path = require('path');
 const mongoose = require('mongoose');
 
@@ -22,13 +22,14 @@ app.use(rateLimit.appRequest)
 app.use(helmet());
 
 app.use((req, res, next) => {
-  if(req.headers.referer != 'http://localhost:4200/'){
+  if(req.headers.referer.slice(0,-1) !== siteDomain){
     res.status(401).json({message: 'access denied'})
   }else{
-    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:4200');
+    console.log(siteDomain)
+    res.setHeader('Access-Control-Allow-Origin', siteDomain);
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Cross-Origin-Resource-Policy', 'http://localhost:4200');
+    res.setHeader('Cross-Origin-Resource-Policy', siteDomain);
     next();
   }
 });

@@ -1,4 +1,5 @@
 const rateLimit = require('express-rate-limit');
+const config = require('../config');
 
 exports.appRequest = rateLimit({
     windowsMs: 15 * 60 * 1000,
@@ -8,8 +9,8 @@ exports.appRequest = rateLimit({
 })
 
 exports.loginRequest = rateLimit({
-    windowsMs: 2 * 60 * 1000,
-    max: 5,
+    windowsMs: 1 * 60 * 1000,
+    max: config.loginLimitation,
     message: () =>{
         console.log('Logins too frequent')
         return 'Logins too frequent'
